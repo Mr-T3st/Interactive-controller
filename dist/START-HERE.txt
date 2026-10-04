@@ -1,0 +1,14 @@
+Interactive-controller v2.8.1
+
+Windows: double-click Interactive-controller.exe (x64) or index.html.
+Linux/macOS: open index.html in a recent browser, or serve the folder locally for PWA behavior.
+Android: use the hosted HTTPS/PWA build and choose the movie from device storage.
+1. Choose the interactive title / episode.
+2. If the title has no bundled pack, load its verified Interactive-controller Story Pack.
+3. Drag/drop or select the matching full internal/master movie file.
+
+Use Interactive Library to see which titles are Built-in, Installed, Pack required, Adapter required, or Invalid.
+Bandersnatch includes a built-in Story Pack. Other playable catalog titles require exact branching metadata.
+No Node.js, npm, installation, account, or video upload is required for this portable build.
+Extract the ZIP before running so the Windows launcher can find index.html.
+Updates: https://github.com/Mr-T3st/Interactive-controller/releases

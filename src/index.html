@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#090909">
+  <title>Interactive-controller</title>
+  <meta name="description" content="Interactive-controller — an offline-first lightweight interactive video player and branching-story controller.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="site-shell" id="app">
+    <div class="brand-row">
+      <div class="brand-title">
+        <h1>Interactive-controller</h1>
+        <span class="version">Universal Story-Pack Build · v2.8.1</span>
+      </div>
+      <a class="github-repo-link" href="https://github.com/Mr-T3st/Interactive-controller" target="_blank" rel="noopener noreferrer" title="Check updates on GitHub" aria-label="Open Interactive-controller on GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .7a11.3 11.3 0 0 0-3.6 22c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2A11.4 11.4 0 0 1 12 6.9c1 0 2 .1 3 .4 2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.1v3.1c0 .4.2.8.8.6A11.3 11.3 0 0 0 12 .7Z"/></svg>
+        <span>GitHub</span>
+      </a>
+    </div>
+
+    <section class="start-screen" id="start-screen">
+      <div class="start-intro">
+        <h2>Choose your interactive.</h2>
+        <p>Select the movie or episode first, then open its full internal/master video. Bandersnatch ships with a built-in Story Pack; other catalog entries accept an Interactive-controller Story Pack containing their exact segment and branching metadata.</p>
+      </div>
+      <section class="title-picker" aria-label="Interactive title selection">
+        <div class="catalog-picker-grid">
+          <label class="catalog-field" for="category-select"><span>Category</span><select id="category-select"><option value="">Choose a category…</option></select></label>
+          <label class="catalog-field" for="title-select"><span>Title / series</span><select id="title-select" disabled><option value="">Choose a title…</option></select></label>
+          <label class="catalog-field" id="episode-field" for="episode-select" hidden><span>Episode</span><select id="episode-select"><option value="">Choose an episode…</option></select></label>
+        </div>
+        <div class="catalog-selection-note" id="catalog-selection-note" hidden></div>
+        <div class="title-pack-status" id="title-pack-status">Choose a category and title to continue.</div>
+        <div class="catalog-actions">
+          <button class="secondary library-button" id="interactive-library-button" type="button">Interactive Library</button>
+          <label class="small-file-button story-pack-button" id="story-pack-button" hidden>Load Story Pack
+            <input id="story-pack-file" type="file" accept="application/json,.json,.icpack">
+          </label>
+        </div>
+      </section>
+      <div class="drop-zone is-locked" id="drop-zone">
+        <strong id="drop-zone-title">Choose an interactive first</strong>
+        <p id="drop-zone-help">The movie stays on your device. Recommended: MP4 (H.264/AAC). MKV is attempted natively when the browser supports its codecs.</p>
+        <label class="file-button" id="movie-open-label">Open movie
+          <input id="video-file" type="file" accept="video/mp4,video/x-matroska,video/webm,.mp4,.mkv,.m4v,.webm" disabled>
+        </label>
+        <p class="resume-message" id="resume-message" hidden></p>
+      </div>
+      <div class="start-grid">
+        <div><strong>Global subtitles</strong><span>Built-in English + Persian use the full master timeline, so seeking to another story segment automatically seeks subtitles to the same timestamp.</span></div>
+        <div><strong>Branch rollback</strong><span>Undo a decision restores the persistent story-state snapshot, not only the video position.</span></div>
+        <div><strong>Story Pack architecture</strong><span>Each title has isolated story/state data. Exact metadata can be bundled at build time or loaded as a local Story Pack.</span></div>
+      </div>
+      <div class="start-actions">
+        <button class="secondary" id="fresh-start-button" type="button">Start fresh route</button>
+        <button class="secondary danger" id="reset-all-button" type="button">Reset progress + settings</button>
+      </div>
+      <p class="keyboard-help"><kbd>Space</kbd> play/pause · <kbd>←</kbd>/<kbd>→</kbd> −/+10s timeline · <kbd>↑</kbd>/<kbd>↓</kbd> previous/next story scene · <kbd>U</kbd> or <kbd>Backspace</kbd> undo last decision · <kbd>F</kbd> fullscreen · <kbd>R</kbd> restart · <kbd>S</kbd> subtitle · <kbd>D</kbd> inspector · <kbd>1–9</kbd> choose · Gamepad: D-pad + A/B supported</p>
+    </section>
+
+    <section class="player" id="player" hidden aria-label="Interactive movie player">
+      <div class="video-stage">
+        <video id="video" preload="auto" playsinline></video>
+        <canvas class="transition-frame" id="transition-frame" hidden aria-hidden="true"></canvas>
+
+        <div class="hud">
+          <div class="hud-left"><span class="hud-label" id="segment-label">Segment —</span><span class="path-code" id="path-code">BND-START</span></div>
+          <div class="hud-right"><button id="story-map-button" type="button">Story path</button><button id="inspector-button" type="button">Inspector</button></div>
+        </div>
+
+        <div class="subtitle-stack" aria-live="polite" aria-atomic="true">
+          <div class="subtitle-line" id="subtitle-primary" hidden></div>
+          <div class="subtitle-line subtitle-secondary" id="subtitle-secondary" hidden></div>
+        </div>
+
+        <section class="choice-overlay" id="choice-overlay" hidden aria-label="Interactive choice">
+          <div class="choice-caption" id="choice-caption"></div>
+          <div class="choice-buttons" id="choice-buttons"></div>
+          <div class="choice-progress" aria-hidden="true"><div id="choice-progress-bar"></div></div>
+        </section>
+
+        <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+      </div>
+
+      <div class="control-bar">
+        <div class="timeline-row">
+          <input id="timeline-slider" class="timeline-slider" type="range" min="0" max="1" step="1" value="0" aria-label="Movie progress">
+        </div>
+        <div class="control-row transport-row">
+          <button class="icon-button" id="back-button" type="button" title="Previous story scene (Up Arrow)" aria-label="Previous story scene">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14M18 6l-9 6 9 6V6z"/></svg><span class="button-caption">Scene</span>
+          </button>
+          <button class="icon-button seek-button" id="rewind-10-button" type="button" title="Back 10 seconds (Left Arrow)" aria-label="Back 10 seconds">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.3 7.8A7 7 0 1 1 5 13h2a5 5 0 1 0 1.6-3.7L11 12H4V5l3.3 2.8z"/><text x="12" y="16.3" text-anchor="middle">10</text></svg>
+          </button>
+          <button class="icon-button primary-control" id="play-button" type="button" aria-label="Play" title="Play / Pause (Space)" data-state="paused">
+            <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7L8 5z"/></svg>
+            <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM14 5h4v14h-4z"/></svg>
+          </button>
+          <button class="icon-button seek-button" id="forward-10-button" type="button" title="Forward 10 seconds (Right Arrow)" aria-label="Forward 10 seconds">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.7 7.8A7 7 0 1 0 19 13h-2a5 5 0 1 1-1.6-3.7L13 12h7V5l-3.3 2.8z"/><text x="12" y="16.3" text-anchor="middle">10</text></svg>
+          </button>
+          <button class="icon-button" id="forward-button" type="button" title="Next story scene (Down Arrow)" aria-label="Next story scene">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5v14M6 6l9 6-9 6V6z"/></svg><span class="button-caption">Scene</span>
+          </button>
+          <button class="icon-button" id="undo-button" type="button" title="Restore state and return to previous decision (U)" aria-label="Undo decision">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7H5v4M5.4 10.6A7 7 0 1 1 6 17l1.5-1.3A5 5 0 1 0 7 9.5L9 7z"/></svg><span class="button-caption">Choice</span>
+          </button>
+          <span class="time-label" id="time-label">00:00:00 / 00:00:00</span>
+          <span class="control-spacer"></span>
+          <button class="icon-button" id="restart-button" type="button" title="Restart (R)" aria-label="Restart">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 1-6.6 9.3l1.9-.6A5 5 0 1 0 8 9.2L10.5 12H4V5.5L6.5 8A7 7 0 0 1 12 5z"/></svg>
+          </button>
+          <button class="icon-button" id="fullscreen-button" type="button" title="Fullscreen (F)" aria-label="Fullscreen">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9V5h4M15 5h4v4M19 15v4h-4M9 19H5v-4"/></svg>
+          </button>
+        </div>
+
+        <div class="control-row">
+          <span class="control-group"><label for="speed-select">Speed</label><select id="speed-select"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></span>
+          <span class="control-group"><label for="subtitle-primary-select">Subtitle 1</label><select id="subtitle-primary-select"></select></span>
+          <span class="control-group"><label for="subtitle-secondary-select">Subtitle 2</label><select id="subtitle-secondary-select"></select></span>
+        </div>
+
+        <div class="control-row">
+          <span class="control-group"><label>Subtitle sync</label><button id="subtitle-minus" type="button">−0.1s</button><span class="offset-value" id="subtitle-offset-value">0.0s</span><button id="subtitle-plus" type="button">+0.1s</button></span>
+          <span class="control-group"><label>Subtitle size</label><button id="subtitle-size-minus" type="button" title="Smaller subtitles">A−</button><span class="offset-value" id="subtitle-size-value">100%</span><button id="subtitle-size-plus" type="button" title="Larger subtitles">A+</button></span>
+          <span class="control-group subtitle-background-control"><label for="subtitle-background-slider">Subtitle background</label><input id="subtitle-background-slider" type="range" min="0" max="0.65" step="0.05" value="0.14"><span class="offset-value" id="subtitle-background-value">14%</span></span>
+          <label class="small-file-button compact-subtitle-button" title="Load external SRT/VTT subtitles">Load SRT/VTT<input id="subtitle-file" type="file" accept=".srt,.vtt,text/vtt,application/x-subrip" multiple></label>
+          <span class="control-group volume-control"><button class="speaker-button" id="mute-button" type="button" title="Mute / unmute (M)" aria-label="Mute">
+            <svg class="speaker-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+            <svg class="speaker-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM17 9l5 5M22 9l-5 5"/></svg>
+          </button><input class="volume-slider" id="volume-slider" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume"></span>
+        </div>
+      </div>
+
+      <div class="status-card" id="media-status" aria-live="polite"><strong>Waiting for metadata</strong><span>Movie duration and subtitle coverage will be validated here.</span></div>
+
+      <aside class="developer-panel" id="developer-panel" hidden>
+        <div class="inspector-grid">
+          <div class="inspector-box"><strong>Time</strong><span id="inspector-time">—</span></div>
+          <div class="inspector-box"><strong>Segment</strong><span id="inspector-segment">—</span></div>
+          <div class="inspector-box"><strong>Active moments</strong><span id="inspector-moments">—</span></div>
+          <div class="inspector-box"><strong>Pending choice</strong><span id="inspector-pending">—</span></div>
+        </div>
+        <div class="inspector-box" style="margin-top:8px"><strong>Changed persistent state</strong><div class="inspector-state" id="inspector-state">No state changes yet.</div></div>
+      </aside>
+    </section>
+  
+    <dialog class="library-dialog" id="interactive-library-dialog">
+      <div class="dialog-card library-card">
+        <div class="dialog-head">
+          <div><span class="eyebrow">Story Pack status</span><h2>Interactive Library</h2></div>
+          <button class="dialog-close" id="interactive-library-close" type="button" aria-label="Close">×</button>
+        </div>
+        <div class="library-summary" id="library-summary"></div>
+        <div class="library-filters">
+          <label><span>Search</span><input id="library-search" type="search" placeholder="Title or series…"></label>
+          <label><span>Category</span><select id="library-category-filter"><option value="">All categories</option></select></label>
+          <label><span>Status</span><select id="library-status-filter"><option value="">All statuses</option><option value="builtin">Built-in</option><option value="installed">Installed</option><option value="required">Pack required</option><option value="adapter-required">Adapter required</option><option value="invalid">Invalid</option></select></label>
+        </div>
+        <div class="library-table-wrap">
+          <table class="library-table">
+            <thead><tr><th>Interactive</th><th>Episode</th><th>Category</th><th>Engine</th><th>Story Pack</th><th></th></tr></thead>
+            <tbody id="library-table-body"></tbody>
+          </table>
+        </div>
+        <p class="library-help">Built-in packs ship with the app. Installed packs are local Story Packs saved in this browser. Pack required means the current engine can run the title once verified metadata is supplied. Adapter required means the interaction model still needs engine support.</p>
+      </div>
+    </dialog>
+</main>
+
+  <div class="global-drop-overlay" id="global-drop-overlay" hidden aria-hidden="true">
+    <div class="global-drop-card">
+      <strong>Drop movie to open</strong>
+      <span>MP4 recommended · MKV/WebM when supported by the browser</span>
+    </div>
+  </div>
+
+  <dialog class="dialog" id="story-map-dialog">
+    <header><h2>Story routes</h2><button id="story-map-close" type="button">Close</button></header>
+    <div class="dialog-body">
+      <div class="map-summary">
+        <div><span class="muted">Current path code</span><strong class="path-code" id="map-path-code">BND-START</strong></div>
+        <div><span class="muted">Segments discovered</span><strong id="visited-count">1/250</strong></div>
+        <div><span class="muted">Current decisions</span><strong id="map-decision-count">0</strong></div>
+      </div>
+      <div class="route-section-heading">
+        <div><h3>Current route</h3><p class="muted">Only meaningful decisions are listed. Timeline seeking is intentionally excluded.</p></div>
+        <button class="secondary" id="save-route-button" type="button">Save current route</button>
+      </div>
+      <div class="decision-list" id="decision-list"></div>
+      <h3>Saved routes</h3>
+      <div class="saved-route-list" id="saved-route-list"></div>
+      <div class="dialog-actions">
+        <button class="secondary" id="export-save-button" type="button">Export current save</button>
+        <label class="import-button">Import save<input id="import-save-file" type="file" accept="application/json,.json"></label>
+      </div>
+      <p class="muted">Returning to a decision restores its persistent-state snapshot. Choosing a different option replaces the future route from that point.</p>
+    </div>
+  </dialog>
+
+  <dialog class="dialog" id="ending-dialog">
+    <header><h2>Playback complete</h2><button id="ending-close" type="button">Close</button></header>
+    <div class="dialog-body">
+      <p>This summary contains only your own discovered route.</p>
+      <div class="ending-grid">
+        <div><strong id="ending-code">—</strong><span>Path code</span></div>
+        <div><strong id="ending-decisions">0</strong><span>Decisions</span></div>
+        <div><strong id="ending-segments">0</strong><span>Segments discovered</span></div>
+      </div>
+      <button class="secondary" id="ending-rewind" type="button">Undo last decision</button>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

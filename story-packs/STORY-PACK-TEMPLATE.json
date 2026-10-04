@@ -1,0 +1,27 @@
+{
+  "catalogId": "choose-love",
+  "story": {
+    "id": "choose-love",
+    "title": "Choose Love",
+    "codePrefix": "CL",
+    "initialSegment": "START",
+    "initialState": {},
+    "segments": {
+      "START": {
+        "startTimeMs": 0,
+        "endTimeMs": 1000,
+        "defaultNext": null
+      }
+    },
+    "momentsBySegment": {
+      "START": []
+    },
+    "segmentGroups": {},
+    "preconditions": {},
+    "choicePoints": {}
+  },
+  "translations": {
+    "en": {}
+  },
+  "subtitles": {}
+}

@@ -1,0 +1,11 @@
+{
+  "segments": 250,
+  "moments": 285,
+  "choiceMoments": 174,
+  "choices": 339,
+  "segmentGroups": 111,
+  "preconditions": 241,
+  "stateVariables": 62,
+  "choicePoints": 143,
+  "interactionZones": 170
+}
